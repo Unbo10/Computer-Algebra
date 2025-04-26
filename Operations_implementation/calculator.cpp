@@ -32,8 +32,8 @@ int Calculator::mod(int num, int b) {
 int Calculator::convert_to_integer(std::vector<int> v, int b) {
     int v_int;
     int v_size = int(v.size());
-    for (int i = v_size; i >= 0; i--) {
-        v_int += v[i] * pow(b, v_size - i);
+    for (int i = 0; i < v_size; i++) {
+        v_int += v[i] * pow(b, v_size - 1 - i);
     }
     return v_int;
 }
@@ -120,7 +120,7 @@ std::vector<int> Calculator::trim_zeros(std::vector<int> v, int min_length = -1)
             found_non_zero = true;
         }
         else{
-            zeros += 1; //5
+            zeros++; //5
         }
     }
 
@@ -142,9 +142,6 @@ std::vector<int> Calculator::trim_zeros(std::vector<int> v, int min_length = -1)
     for (int i = 0; i < new_v_length; i++) {
         new_v[i] = v[i + zeros];
     }    
-    for (int i = 0; i < v_size - zeros; i++) {
-        new_v[i] = v[i + zeros];
-    }
 
     return new_v;
 }
@@ -292,6 +289,19 @@ std::vector<int> Calculator::multiply(std::vector<int> n, std::vector<int> m, in
     return w;
 }
 
+int Calculator::real_len(const std::vector<int> v) {
+    // cout << 
+    print_vector(v);
+    int i = 0;
+    int left_zeros = 0;
+    while (v[i] == 0) {
+        left_zeros++;
+        i++;
+    }   
+    cout << "len: " << v.size() - left_zeros << "\n";
+    return v.size() - left_zeros;
+}
+
 int Calculator::minimize_greatest_power(std::vector<int> a) {
     int num_digits = int(a.size());
     int exp = 0; //*Exponent
@@ -384,64 +394,84 @@ std::vector<int>* Calculator::divide(std::vector<int> u, std::vector<int> v, int
     std::vector<int> nu = trim_zeros(multiply(u, d, b)); //*Normalized u or u'
     print_vector(nu);
     std::vector<int> nv = trim_zeros(multiply(v, d, b)); //*Normalized v or v'
+    std::vector<int> comparison_nv = add_zeros(nv, 1); //*Will have the same length as u_hat
     print_vector(nv);
-    // int nv_size = int(nv.size()); //? Will it be the same as v_size?
-
-    //*Compute the normalized quotient
-    std::vector<int> nq = std::vector<int>(u_size - v_size + 1);
-
+    
     //*Initialize u-hat, which will take the first v_size digits of nu (no need for left-padding).
-    std::vector<int> u_hat = std::vector<int>(v_size + 1);
+    std::vector<int> u_hat = std::vector<int>(v_size + 1); //!This size may not be correct
     for (int i = 0; i < v_size + 1; i++) {
         u_hat[i] = nu[i];
     }
     std::vector<int> w;
 
     //*Initialize the quotient and the reminder
-    std::vector<int> q = std::vector<int>(u_size - v_size); //! + 1
+    std::vector<int> q = std::vector<int>(u_size - v_size + 1); //! + 1
     std::vector<int> r = std::vector<int>(v_size);
 
-    for (int j = 0; j < u_size - v_size; j++) { //!May be < and not <=
+    int correction = 0;
+    if (u_hat[0] >= nv[0]) {
+        // print_vector(u_hat);
+        u_hat = add_zeros(u_hat, 1);
+        u_hat.pop_back();
+        correction = 1;
+        // cout << "Modofied u_hat\n";
+        // print_vector(u_hat);
+        // cout << "\n";
+    }
+
+    for (int j = 0; j <= v_size + 1; j++) { //!May be < and not <=
         //TODO: Check the subscripts -they may vary in the current implementation
         //*Instead of n and n - 1, it is respectively m and 0
-        // if (u_hat[0] == nv[0]) {
-        //     q[j] = b - 1;
-        // }
-        // else {
+        if (u_hat[0] == nv[0]) {
+            q[j] = b - 1;
+        }
+        else {
             q[j] = (u_hat[0] * b + u_hat[1]) / nv[0];
-            cout << "Trial quotient\n";
-            cout << u_hat[0] << "\n";
-            cout << u_hat[1] << "\n";
-            cout << nv[0] << "\n";
-        // }
+            cout << "Trial quotient: " << q[j] << "\n";
+            // cout << u_hat[0] << "\n";
+            // cout << u_hat[1] << "\n";
+            // cout << nv[0] << "\n";
+        }
         w = multiply(convert_to_vector(q[j]), nv, b);
+        pretty_print_operation(convert_to_vector(q[j]), nv, w, '*');
         w = trim_zeros(w);
-        // print_vector(u_hat);
-        cout << "\n";
-        cout << "q: " << q[j] << "\n";
+        w = add_zeros(w, v_size + 1 - int(w.size()));
+        // cout << real_len(v);
+        cout << "w:\n";
+        print_vector(w);
+        print_vector(u_hat);
+        // cout << "\n";
+        // print_vector(w);
         while (w > u_hat) {
+            cout << "q and u_hat comparison: " << (w > u_hat) << "\n";
             //*At most two iterations
             q[j]--;
             w = subtract(w, nv, b);
         }
         w = trim_zeros(w);
-        cout << "w:\n";
-        print_vector(w);
-        cout << "r: \n";
         r = subtract(u_hat, w, b);
-        print_vector(r);
-        if (j < u_size - v_size - 1) {
-            u_hat = add(trim_zeros(multiply(r, convert_to_vector(b), b)), convert_to_vector(nu[(u_size - v_size) + j]), b); //! Not adding correctly
+        pretty_print_operation(u_hat, w, r, '-');
+        // cout << "w:\n";
+        // print_vector(w);
+        // cout << "r: \n";
+        // print_vector(r);
+        if (j < v_size + 1) {
+            u_hat = add(trim_zeros(multiply(r, convert_to_vector(b), b)), convert_to_vector(nu[(v_size + 1) + j - correction]), b); //! Not adding correctly
             u_hat = trim_zeros(u_hat, v_size + 1);
-            cout << "u_hat: \n";
-            pretty_print_operation(trim_zeros(multiply(r, convert_to_vector(b), b)), convert_to_vector(nu[(u_size - v_size) + j]), u_hat, '+');
+            // cout << "u_hat: \n";
+            // pretty_print_operation(trim_zeros(multiply(r, convert_to_vector(b), b)), convert_to_vector(nu[(v_size + 1) + j - correction]), u_hat, '+');
             // print_vector(u_hat);
         }
     }
+    cout << "ddddd";
+    print_vector(d);
+    r = trim_zeros(r);
+    if(r.size() > 1) {
+        r = trim_zeros(divide(r, d, b)[0]);
+    }
+
     //*Convert d and the remainder to integers (they both are less than or equal to b-1)
-    int d_int = convert_to_integer(d, b);
     int r_int = convert_to_integer(trim_zeros(r), b);
-    r_int = r_int / d_int; //*To avoid infinite recursion
 
     std::vector<int>* q_and_r = new std::vector<int>[2];
     pretty_print_operation(u, v, q, '/');
@@ -449,6 +479,6 @@ std::vector<int>* Calculator::divide(std::vector<int> u, std::vector<int> v, int
     print_vector(r);
     
     q_and_r[0] = q;
-    q_and_r[1] = convert_to_vector(r_int);
+    q_and_r[1] = r;
     return q_and_r;
 }

@@ -13,6 +13,11 @@ int main() {
     res = calc.subtract(1100101, 101001, 2); //* 101 - 41 = 60 (111100)
     res = calc.multiply(101001, 1100101, 2); //* 101 * 41 = 4141 (1000000101101)
     std::cout << "Division\n";
-    std::vector<int>* res_div = calc.divide(34501, 34, 10); //!ISSUE WHEN SIZES ARE THE SAME
+    std::vector<int>* res_div = calc.divide(37, 34, 10); //!Fails this case
+    std::cout << "q:\n";
+    calc.print_vector(res_div[0]);
+    std::cout << "r:\n";
+    calc.print_vector(res_div[1]);
+    std::cout << "Actual result: " << 35 / 34 << " + remainder of " << 35 % 34;
     // delete res_div;
 }

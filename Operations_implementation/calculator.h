@@ -5,6 +5,9 @@ class Calculator {
     protected:
         int convert_to_integer(std::vector<int>, int);
         std::vector<int> convert_to_vector(int);
+        /**
+         * @brief Add zeros to the left of the vector (i.e., from position `0`)
+         */
         std::vector<int> add_zeros(std::vector<int>, int);
         std::vector<int> trim_zeros(std::vector<int>, int);
         int minimize_greatest_power(std::vector<int>);
@@ -25,6 +28,7 @@ class Calculator {
          * @return std::vector<int> If the operation is succesful, then it will
          * return one of the two halves of `v`.
          */
+        int real_len(std::vector<int>);
         std::vector<int> split_vector(std::vector<int>, const char);
     public:
         Calculator();

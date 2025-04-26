@@ -1,0 +1,11 @@
+#*Ignore VSC configuration
+.vscode/
+
+#*Ignore local tests
+tests.cpp
+
+#*Ignore output files
+output
+
+#*Ignore Java files
+*.java/
