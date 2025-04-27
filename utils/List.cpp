@@ -1,6 +1,8 @@
 #ifndef LIST_H
 #define LIST_H
 #include <iostream>
+#include "Iterator.cpp"
+#include "Iterable.cpp"
 /*
     La idea es crear una clase que implemente
     listas dinamicas y asi lograr una implementacion 
@@ -9,7 +11,7 @@
     Se hace la implementacion con arreglos.
 */
 template <typename U>
-class List
+class List : public Iterable<U>
 {
     private:
         static const int DEFAULT_INITIAL_SIZE = 10;
@@ -50,7 +52,7 @@ class List
             if(length == capacity) 
                 resize();
 
-            for(int i = length-1; index < i; i++)
+            for(int i = length-1; index < i; i--)
                 array[i+1] = array[i];
             
             array[index] = item;
@@ -81,15 +83,53 @@ class List
             return pop(0);
         }
 
+        bool isEmpty()
+        {
+            return length == 0;
+        }
+
+        int size() const
+        {
+            return length;
+        }
+
+        U* getArray() const
+        {
+            return array;
+        }
+
+        void clear()
+        {
+            delete[] array;
+            length = 0;
+            array = new U[DEFAULT_INITIAL_SIZE];
+            capacity = DEFAULT_INITIAL_SIZE;
+        }
+
+        U& operator[](int index) const
+        {
+            if (index < 0 || index >= length) {
+                throw std::invalid_argument("Index out of the range");
+            }
+
+            return this->array[index];
+        }
+
         friend std::ostream& operator<<(std::ostream& os, const List& list)
         {
             os << "[";
             for(int i = 0; i < list.length; i++)
-                os << list.array[i] << ((i != list.length-1)? ", ": "]\n");
-
+            {
+                os << list.array[i];
+                if(i != list.length - 1)
+                    os << ", ";
+            }
+            os << "]";
             return os;
         }
         
+        Iterator<U> begin() const { return Iterator(array); }
+        Iterator<U> end() const { return Iterator(array + length); }
 };
 
 #endif
