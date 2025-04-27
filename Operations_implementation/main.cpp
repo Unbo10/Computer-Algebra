@@ -1,10 +1,10 @@
 #include <iostream>
-#include <vector>
-#include "calculator.h"
 #include "../Numbers/Integer.cpp"
 
 int main() {
-    Integer number(127312);
+    Integer number = 12318124, second = 9714987124;
+    for(int i = 0; i < 10; i++)
+        number += second;
 
     std::cout << number;
 }

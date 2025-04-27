@@ -6,10 +6,11 @@
 class Integer
 {
     private:
-        static const int DEFAULT_BASE = 100001;
+        static const int DEFAULT_BASE = 100000;
+        static const int digitsByBlock = 5;
 
         List<int> digitsInteger;
-        int BASE;
+        int BASE = DEFAULT_BASE;
         bool sign;
 
         static int max(int x, int y)
@@ -17,43 +18,10 @@ class Integer
             if(x < y) return y;
             return x;
         }
-    public:
 
-        Integer(int BASE)
+        void forceAdd(long long newDigit)
         {
-            this->BASE = BASE;
-            sign = 1;
-        }
-
-        Integer(bool sign) : Integer(DEFAULT_BASE) {this->sign = sign;}
-
-        Integer() : Integer(DEFAULT_BASE) {}
-
-        Integer(int represent, int BASE) : Integer(BASE)
-        {
-            sign = (represent >= 0);
-            represent = represent*sign;
-            addDigit(represent);
-        }
-
-        Integer(long represent) : Integer(DEFAULT_BASE)
-        {
-            sign = (represent >= 0);
-            represent = represent*sign;
-            addDigit(represent);
-        }
-
-        Integer(long long represent) : Integer(DEFAULT_BASE)
-        {
-            sign = (represent >= 0);
-            represent = represent*sign;
-            addDigit(represent);
-        }
-
-        void addDigit(long long newDigit)
-        {
-            if(newDigit <= 0) return;
-
+            if(newDigit == 0) digitsInteger.add(0);
             while(0 < newDigit)
             {
                 int res = newDigit%BASE;
@@ -62,11 +30,36 @@ class Integer
             }
         }
 
-        int digitAt(int index)
+        // O(log_10 (n))
+        static int digits(int x)
+        {
+            int c = 0;
+            while(x != 0)
+            {
+                x /= 10;
+                c++;
+            }
+            return c;
+        }
+    public:
+        Integer(): Integer(0) {}
+        Integer(long long x)
+        {
+            sign = x >= 0;
+            addDigit(sign? x: -x);
+        }
+
+        void addDigit(long long newDigit)
+        {
+            if(newDigit <= 0) return;
+            forceAdd(newDigit);
+        }
+
+        int digitAt(int index) const
         {
             try{
                 return digitsInteger[index];
-            }catch(const std::out_of_range& e)
+            }catch(const std::invalid_argument& e)
             {
                 return 0;
             }
@@ -84,46 +77,61 @@ class Integer
 
         friend Integer operator+(Integer first, Integer second)
         {
-            // por el momento usamos esta linea, porque diferentes signos
-            // implica que se hace una resta
-            if(first.sign ^ second.sign) throw std::invalid_argument("Addition of Integers with different signs is not supported yet.");
-            Integer sumOfIntegers(first.sign);
+            if (first.sign ^ second.sign) 
+                throw std::invalid_argument("Addition of Integers with different signs is not supported yet.");
+
+            if (first.BASE != second.BASE) 
+                throw std::invalid_argument("Not defined sum of integers in different Bases yet");
+
+            Integer sumOfIntegers;
             int length = max(first.numberSize(), second.numberSize());
             int c = 0;
-            long long expB = 1, expD = 1, res = 0;
-            int B = first.getBase(), D = second.getBase();
+            long long res = 0;
 
-            while(c < length || res != 0)
+            while (c < length || res != 0)
             {
-                res += first.digitAt(c)*expB + second.digitAt(c)*expD;
-                expB *= B;
-                expD *= D;
-
-                sumOfIntegers.addDigit(res%DEFAULT_BASE);
-                res /= DEFAULT_BASE;
+                res += first.digitAt(c) + second.digitAt(c);
+                sumOfIntegers.addDigit(res % first.BASE);
+                res /= first.BASE;
+                c++;
             }
 
             return sumOfIntegers;
         }
 
-        friend std::ostream& operator<<(std::ostream& os, Integer& number)
+
+        friend std::ostream& operator<<(std::ostream& os, const Integer& number)
         {
-            //if(number.numberSize() == 0) return os << '0';
+            if(number.digitsInteger.size() == 0) return os << '0';
 
             if(!number.sign) os << "-";
-
-            for(int i = number.numberSize() - 1; 0 <= i; i--)
+            
+            os << number.digitAt(number.digitsInteger.size() - 1);
+            for(int i = number.digitsInteger.size() - 2; i >= 0; i--)
             {
-                os << number.digitsInteger[i];
+                for(int j = 0; j < Integer::digitsByBlock- digits(number.digitAt(i)); j++)
+                    os << '0';
+                os << number.digitAt(i);
             }  
-            return os;
+            return os << " (based-)" << number.BASE;
         }
 
-        void operator=(long long number)
+        void operator+=(const Integer& other)
+        {
+            *this = *this + other;
+        }
+
+        Integer& operator=(long long number)
         {
             digitsInteger.clear();
             sign = number >= 0;
-            this->addDigit((sign)? number: -number);
+            this->addDigit((sign)? number : -number);
+            return *this;
+        }
+
+        List<int> getList()
+        {
+            return digitsInteger;
         }
 };
 
