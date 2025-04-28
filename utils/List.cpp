@@ -132,6 +132,14 @@ class List : public Iterable<U>
             return this->array[index];
         }
 
+        void operator=(List<U> another)
+        {
+            delete[] array;
+            length = another.length;
+            capacity = another.capacity;
+            array = another.array;
+        }
+
         friend std::ostream& operator<<(std::ostream& os, const List& list)
         {
             os << "[";

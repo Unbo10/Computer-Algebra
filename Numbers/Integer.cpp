@@ -41,6 +41,25 @@ class Integer
             }
             return c;
         }
+
+        static void cleanDigits(Integer& num)
+        {
+            int length = num.numberSize();
+            while(num.digitAt(length-1) == 0)
+                length--;
+            List<int> clean(length);
+            for(int i = 0; i < length; i++)
+                clean.add(num.digitAt(i));
+
+            num.digitsInteger = clean;
+        }
+
+        static int karatsuba(Integer& num1, Integer& num2, int start, int end)
+        {
+            if(start == end) return num1.digitAt(start)*num2.digitAt(start);
+
+        }
+
     public:
         Integer(): Integer(0) {}
         Integer(long long x)
@@ -49,6 +68,7 @@ class Integer
             addDigit(sign? x: -x);
         }
         Integer(const Integer& toC) : digitsInteger(toC.digitsInteger), sign(toC.sign), BASE(toC.BASE) {}
+        //~Integer() {}
 
         void addDigit(long long newDigit)
         {
@@ -87,7 +107,12 @@ class Integer
         friend Integer operator+(Integer first, Integer second)
         {
             if (first.sign ^ second.sign) 
-                throw std::invalid_argument("Addition of Integers with different signs is not supported yet.");
+            {
+                if(first.sign == true)
+                    return first - (-second);
+                return second - (-first);
+            }
+                
 
             if (first.BASE != second.BASE) 
                 throw std::invalid_argument("Not defined sum of integers in different Bases yet");
@@ -105,6 +130,7 @@ class Integer
                 c++;
             }
             sumOfIntegers.sign = first.sign;
+            Integer::cleanDigits(sumOfIntegers);
             return sumOfIntegers;
         }
 
@@ -133,8 +159,15 @@ class Integer
                 tR.forceAdd(kResult);
             }
 
+            Integer::cleanDigits(tR);
             return tR;
         }
+
+        /*friend Integer operator*(const Integer& num1, const Integer& num2)
+        {
+
+            return std::nullptr;
+        }*/
 
         friend std::ostream& operator<<(std::ostream& os, const Integer& number)
         {
@@ -210,7 +243,7 @@ class Integer
 
         List<int> getList()
         {
-            return digitsInteger;
+            return List(digitsInteger);
         }
 };
 
