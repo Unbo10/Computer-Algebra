@@ -258,20 +258,21 @@ std::vector<int> Calculator::multiply(int n, int m, int b) {
 }
 
 std::vector<int> Calculator::multiply(std::vector<int> n, std::vector<int> m, int b) {
+    int m_original_size = trim_zeros(m).size();
     int zeros = int(n.size()) - int(m.size());
     m = add_zeros(m, zeros);
-    int n_len = int(n.size());
-    int m_len = int(m.size());
+    int n_size = int(n.size());
+    int m_size = int(m.size());
     int k = 0; //*Carry
     int t = 0;
-    std::vector<int> w(n_len + m_len); //*Last position will be n_len + m_len - 1
+    std::vector<int> w(n_size + m_size); //*Last position will be n_size + m_size - 1
 
     //   n
     // * m
-    for (int i = m_len - 1; i >= 0; i--) {
+    for (int i = m_size - 1; i >= 0; i--) {
         if (m[i] != 0) {
             k = 0;
-            for(int j = n_len - 1; j >= 0; j--) {
+            for(int j = n_size - 1; j >= 0; j--) {
                 t = w[i + j + 1] + (n[j] * m[i]) + k;
                 w[i + j + 1] = t % b;
                 // cout << "At i=" << i << ", j=" << j << ": w[" << i+j+1 << "]=" << w[i+j+1]
@@ -284,8 +285,15 @@ std::vector<int> Calculator::multiply(std::vector<int> n, std::vector<int> m, in
             // << ", k=" << k << "\n";
         }
     }
+    // cout << n_size + m_original_size << "\n";
 
-    // pretty_print_operation(n, m, w, 'x');
+    // std::vector<int> correct_size_w = std::vector<int>(n_size + m_original_size + 1);
+    // for (int i = n_size + m_size - 1; i >= 0; i--) {
+    //     cout << i << "\n";
+    //     correct_size_w[i] = w[i];
+    // }
+
+    pretty_print_operation(n, m, w, 'x');
     return w;
 }
 
@@ -391,9 +399,9 @@ std::vector<int>* Calculator::divide(std::vector<int> u, std::vector<int> v, int
 
     //*Normalize vectors
     std::vector<int> d = convert_to_vector(b / (v[0] + 1));
-    std::vector<int> nu = trim_zeros(multiply(u, d, b)); //*Normalized u or u'
+    std::vector<int> nu = multiply(u, d, b); //*Normalized u or u'
     print_vector(nu);
-    std::vector<int> nv = trim_zeros(multiply(v, d, b)); //*Normalized v or v'
+    std::vector<int> nv = multiply(v, d, b); //*Normalized v or v'
     std::vector<int> comparison_nv = add_zeros(nv, 1); //*Will have the same length as u_hat
     print_vector(nv);
     
