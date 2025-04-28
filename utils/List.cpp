@@ -44,6 +44,12 @@ class List : public Iterable<U>
 
         List() : List(DEFAULT_INITIAL_SIZE) {}
 
+        List(const List<U>& another) : List(another.size())
+        {
+            for(int i = 0; i < another.length; i++)
+                add(another[i]);
+        }
+
         void add(const U& item, int index)
         {
             if(length < index || index < 0)
@@ -104,6 +110,17 @@ class List : public Iterable<U>
             length = 0;
             array = new U[DEFAULT_INITIAL_SIZE];
             capacity = DEFAULT_INITIAL_SIZE;
+        }
+
+        template <typename M>
+        friend bool operator==(const List<M> l1, const List<M> l2)
+        {
+            if(l1.size() != l2.size()) return false;
+
+            for(int i = 0; i < l1.size(); i++)
+                if(l1[i] != l2[i]) return false;
+
+            return true;
         }
 
         U& operator[](int index) const

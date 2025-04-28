@@ -48,6 +48,7 @@ class Integer
             sign = x >= 0;
             addDigit(sign? x: -x);
         }
+        Integer(const Integer& toC) : digitsInteger(toC.digitsInteger), sign(toC.sign), BASE(toC.BASE) {}
 
         void addDigit(long long newDigit)
         {
@@ -65,7 +66,7 @@ class Integer
             }
         }
 
-        int numberSize()
+        int numberSize() const
         {
             return digitsInteger.size();
         }
@@ -73,6 +74,14 @@ class Integer
         int getBase()
         {
             return BASE;
+        }
+
+        // operaciones entre numeros
+        friend Integer operator-(const Integer& num)
+        {
+            Integer toR(num);
+            toR.sign = !toR.sign;
+            return toR;
         }
 
         friend Integer operator+(Integer first, Integer second)
@@ -95,10 +104,37 @@ class Integer
                 res /= first.BASE;
                 c++;
             }
-
+            sumOfIntegers.sign = first.sign;
             return sumOfIntegers;
         }
 
+        friend Integer operator-(const Integer& num1, const Integer& num2)
+        {
+            if (num1.BASE != num2.BASE) 
+                throw std::invalid_argument("Not defined difference of integers in different Bases yet");
+
+            if(num1 < num2)
+                return -(num2 - num1);
+
+            bool carry = 0;
+            int maxSize = Integer::max(num1.numberSize(), num2.numberSize());
+            Integer tR;
+            tR.BASE = num1.BASE;
+
+            for(int i = 0; i < maxSize; i++)
+            {
+                int kResult = num1.digitAt(i) - num2.digitAt(i) - carry;
+                if(kResult < 0)
+                {
+                    carry = 1;
+                    kResult += num1.BASE;
+                }
+                else carry = 0;
+                tR.forceAdd(kResult);
+            }
+
+            return tR;
+        }
 
         friend std::ostream& operator<<(std::ostream& os, const Integer& number)
         {
@@ -116,6 +152,7 @@ class Integer
             return os << " (based-)" << number.BASE;
         }
 
+        // operadora de asignacion
         void operator+=(const Integer& other)
         {
             *this = *this + other;
@@ -127,6 +164,48 @@ class Integer
             sign = number >= 0;
             this->addDigit((sign)? number : -number);
             return *this;
+        }
+
+        // operadores de comparacion
+        friend bool operator<(const Integer& num1, const Integer& num2)
+        {
+            if(num2.sign == 0 && num1.sign == 1) return false;
+            else if(num2.sign == 1 && num1.sign == 0) return true;
+            else if(num2.sign == 1 && num1.sign == 1)
+            {
+                int length = Integer::max(num2.numberSize(), num1.numberSize());
+                for(int i = length - 1; 0 <= i; i--)
+                {
+                    if(num1.digitAt(i) < num2.digitAt(i))
+                        return true;
+                    else if(num2.digitAt(i) < num1.digitAt(i))
+                        return false;
+                }
+
+                return false;
+            }
+
+            return -num2 < -num1;
+        }  
+
+        friend bool operator==(Integer& num1, Integer& num2)
+        {
+            return num1.digitsInteger == num2.digitsInteger;
+        }
+
+        friend bool operator<=(Integer& num1, Integer& num2)
+        {
+            return num1 < num2 || num1 == num2;
+        }
+
+        friend bool operator>(Integer& num1, Integer& num2)
+        {
+            return  num2 < num1;
+        }
+
+        friend bool operator>=(Integer& num1, Integer& num2)
+        {
+            return num1 > num2 || num1 == num2;
         }
 
         List<int> getList()
