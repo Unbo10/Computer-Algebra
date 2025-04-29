@@ -11,7 +11,7 @@ class Integer
         static const int digitsByBlock = 5;
 
         List<int> digitsInteger;
-        int BASE = DEFAULT_BASE;
+        int BASE;
         bool sign;
 
         static int max(int x, int y)
@@ -131,8 +131,8 @@ class Integer
         }
 
     public:
-        Integer(): Integer(0) {}
-        Integer(long long x)
+        Integer(): Integer(0)  {}
+        Integer(long long x): BASE(DEFAULT_BASE), sign(true)
         {
             sign = x >= 0;
             addDigit(sign? x: -x);
@@ -274,41 +274,46 @@ class Integer
 
         friend Integer operator/(const Integer& num1, const Integer& num2)
         {
-            if(num2 == 0) throw std::invalid_argument("Math error: Division by cero");
-            if(num1.BASE != num2.BASE) throw std::invalid_argument("Dont support division in differents bases");
-            if(num1 == 0 || num1.numberSize() < num2.numberSize()) return Integer();
-            int top = num2.digitAt(num2.numberSize()-1);
-            int scaleFactor = (top >= num2.BASE/2)? 1: num2.BASE/(top+1);
+            if (num2 == Integer(0))
+                throw std::invalid_argument("Math error: Division by zero");
+            if (num1.BASE != num2.BASE)
+                throw std::invalid_argument("Different bases not supported");
+            if (num1.numberSize() < num2.numberSize())
+                return Integer(0);
+            int top = num2.digitAt(num2.numberSize() - 1);
+            int scaleFactor  = (top >= num2.BASE/2) 
+                        ? 1 
+                        : num2.BASE/(top + 1);
+            Integer dividend = (scaleFactor == 1 ? num1 : scaleFactor * num1);
+            Integer divisor = (scaleFactor == 1 ? num2 : scaleFactor * num2);
 
-            Integer dividend = scaleFactor*num1;
-            Integer divisor = scaleFactor*num2;
             int m = dividend.numberSize() - divisor.numberSize();
             Integer U = dividend.partHigh(divisor.numberSize());
 
             Integer quant;
+            quant.BASE = num1.BASE;
             quant.setSize(m+1);
             for(int i=0; i < m; i++)
                 quant.digitsInteger.add(0);
 
-            for(int j = m; 0 <= j; j--)
+            for(int j = m-1; 0 <= j; j--)
             {
                 long long high = U.digitAt(U.numberSize() - 1);
                 long long low = U.digitAt(U.numberSize() - 2);
                 long long q = (1LL * high * num2.BASE + low) / divisor.digitAt(divisor.numberSize() - 1);
+                if(q >= num1.BASE) q = num1.BASE - 1;
 
                 Integer multiplyTest = q*divisor;
                 while(U < multiplyTest)
                 {
-                    q --;
+                    q--;
                     multiplyTest = multiplyTest - divisor;
                 }
                 Integer remainer = U - multiplyTest;
                 if(0 < j)
                     U = Integer::multiplyByBase(remainer, 1) + dividend.digitAt(j - 1);
                 
-                if(q == 0)
-                    quant.digitsInteger.pop(j);
-                else quant.digitsInteger.replace(q, j);
+                quant.digitsInteger.replace(q, j);
             }
             Integer::cleanDigits(quant);
             return quant;
