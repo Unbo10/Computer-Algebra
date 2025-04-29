@@ -2,6 +2,7 @@
 #define INTEGER_H
 
 #include "../utils/List.cpp"
+#include <iostream>
 
 class Integer
 {
@@ -17,6 +18,12 @@ class Integer
         {
             if(x < y) return y;
             return x;
+        }
+
+        static long long min(long long x, long long y)
+        {
+            if(x < y) return x;
+            return y;
         }
 
         void forceAdd(long long newDigit)
@@ -45,8 +52,9 @@ class Integer
         static void cleanDigits(Integer& num)
         {
             int length = num.numberSize();
-            while(num.digitAt(length-1) == 0)
+            while(0 < length && num.digitAt(length-1) == 0)
                 length--;
+            if(length == num.numberSize()) return;
             List<int> clean(length);
             for(int i = 0; i < length; i++)
                 clean.add(num.digitAt(i));
@@ -54,10 +62,72 @@ class Integer
             num.digitsInteger = clean;
         }
 
-        static int karatsuba(Integer& num1, Integer& num2, int start, int end)
+        Integer partHigh(int index) const
         {
-            if(start == end) return num1.digitAt(start)*num2.digitAt(start);
+            Integer toR;
+            for(int i = digitsInteger.size() - index -1; i < digitsInteger.size(); i++)
+                toR.addDigit(digitsInteger[i]);
+            return toR;
+        }
 
+        Integer lowPart(int index) const
+        {
+            Integer toR;
+            for(int i = 0; i < index; i++)
+                toR.digitsInteger.add(digitsInteger[i]);
+            return toR;
+        }
+
+        static Integer karatsuba(const Integer& num1, const Integer& num2)
+        {
+            if(num1.numberSize() <= 15 || num2.numberSize() <= 15)
+                return conventionalForm(num1, num2);
+            int upperSize = Integer::max(num1.numberSize(), num2.numberSize())/2;
+
+            Integer uper1 = num1.partHigh(upperSize);
+            Integer lower1 = num1.lowPart(upperSize);
+            Integer upper2 = num2.partHigh(upperSize);
+            Integer lower2 = num2.lowPart(upperSize);
+
+            Integer U = karatsuba(uper1, upper2);
+            Integer V = karatsuba(lower1, lower2);
+            Integer W = karatsuba(uper1 + lower1, upper2 + lower2) -U -V;
+            return multiplyByBase(V, 2*upperSize) + multiplyByBase(W, upperSize) + U;
+        }
+
+        static Integer conventionalForm(const Integer& num1, const Integer& num2)
+        {
+            Integer product;
+            product.BASE = num1.BASE;
+            int totalSize = num1.numberSize() + num2.numberSize();
+
+            for(int i = 0; i < totalSize; i++)
+                product.digitsInteger.add(0);
+
+            for(int j = 0; j < num2.numberSize(); j++)
+            {
+                if(num2.digitAt(j) == 0) continue;
+                long long carry = 0;
+                for(int i = 0; i < num1.numberSize(); i++)
+                {
+                    long long realSum = carry + 1LL * num1.digitAt(i)*num2.digitAt(j) + product.digitAt(i+j);
+                    product.digitsInteger.replace(realSum%num1.BASE, i+j);
+                    carry = realSum/num1.BASE;
+                }
+                product.digitsInteger.replace(carry, num1.numberSize()+j);
+            }
+
+            Integer::cleanDigits(product);
+            return product;
+        }
+
+        static Integer multiplyByBase(const Integer& num, int times)
+        {
+            Integer result;
+            for(int i = 0; i < times; i++)
+                result.digitsInteger.add(0);
+            result.addDigit(num);
+            return result;
         }
 
     public:
@@ -66,14 +136,34 @@ class Integer
         {
             sign = x >= 0;
             addDigit(sign? x: -x);
+            Integer::cleanDigits(*this);
         }
         Integer(const Integer& toC) : digitsInteger(toC.digitsInteger), sign(toC.sign), BASE(toC.BASE) {}
         //~Integer() {}
+
+        void setSize(int newSize)
+        {
+            List<int> newList(newSize);
+            for(int i = 0; i < newSize; i++)
+                newList.add(digitAt(i));
+
+            digitsInteger = newList;
+        }
 
         void addDigit(long long newDigit)
         {
             if(newDigit <= 0) return;
             forceAdd(newDigit);
+        }
+
+        void addDigit(const Integer& newDigit)
+        {
+            if(BASE != newDigit.BASE)
+                throw std::invalid_argument("Not implemented digits in diferents bases");
+            
+            for(int x: newDigit.digitsInteger)
+                digitsInteger.add(x);
+            
         }
 
         int digitAt(int index) const
@@ -163,11 +253,66 @@ class Integer
             return tR;
         }
 
-        /*friend Integer operator*(const Integer& num1, const Integer& num2)
+        friend Integer operator*(const Integer& num1, const Integer& num2)
         {
+            if(num1 == 0 || num2 == 0) return Integer();
+            Integer mult = Integer::karatsuba(num1, num2);
+            mult.sign = !(num1.sign ^ num2.sign);
+            Integer::cleanDigits(mult);
+            return mult;
+        }
 
-            return std::nullptr;
-        }*/
+        friend Integer operator*(const Integer& num1, long long num2)
+        {
+            return Integer(num2)*num1;
+        }
+        
+        friend Integer operator*(long long num1, const Integer& num2)
+        {
+            return num2*num1;
+        }
+
+        friend Integer operator/(const Integer& num1, const Integer& num2)
+        {
+            if(num2 == 0) throw std::invalid_argument("Math error: Division by cero");
+            if(num1.BASE != num2.BASE) throw std::invalid_argument("Dont support division in differents bases");
+            if(num1 == 0 || num1.numberSize() < num2.numberSize()) return Integer();
+            int top = num2.digitAt(num2.numberSize()-1);
+            int scaleFactor = (top >= num2.BASE/2)? 1: num2.BASE/(top+1);
+
+            Integer dividend = scaleFactor*num1;
+            Integer divisor = scaleFactor*num2;
+            int m = dividend.numberSize() - divisor.numberSize();
+            Integer U = dividend.partHigh(divisor.numberSize());
+
+            Integer quant;
+            quant.setSize(m+1);
+            for(int i=0; i < m; i++)
+                quant.digitsInteger.add(0);
+
+            for(int j = m; 0 <= j; j--)
+            {
+                long long high = U.digitAt(U.numberSize() - 1);
+                long long low = U.digitAt(U.numberSize() - 2);
+                long long q = (1LL * high * num2.BASE + low) / divisor.digitAt(divisor.numberSize() - 1);
+
+                Integer multiplyTest = q*divisor;
+                while(U < multiplyTest)
+                {
+                    q --;
+                    multiplyTest = multiplyTest - divisor;
+                }
+                Integer remainer = U - multiplyTest;
+                if(0 < j)
+                    U = Integer::multiplyByBase(remainer, 1) + dividend.digitAt(j - 1);
+                
+                if(q == 0)
+                    quant.digitsInteger.pop(j);
+                else quant.digitsInteger.replace(q, j);
+            }
+            Integer::cleanDigits(quant);
+            return quant;
+        }
 
         friend std::ostream& operator<<(std::ostream& os, const Integer& number)
         {
@@ -199,6 +344,15 @@ class Integer
             return *this;
         }
 
+        Integer& operator=(const Integer& numb)
+        {
+            if(this == &numb) return *this;
+            digitsInteger = numb.digitsInteger;
+            sign = numb.sign;
+            BASE = numb.BASE;
+            return *this;
+        }
+
         // operadores de comparacion
         friend bool operator<(const Integer& num1, const Integer& num2)
         {
@@ -221,10 +375,38 @@ class Integer
             return -num2 < -num1;
         }  
 
-        friend bool operator==(Integer& num1, Integer& num2)
+        friend bool operator==(const Integer& num1, const Integer& num2)
         {
-            return num1.digitsInteger == num2.digitsInteger;
+            return num1.sign == num2.sign &&
+                   num1.digitsInteger == num2.digitsInteger &&
+                   num1.BASE == num2.BASE;
         }
+
+        friend bool operator!=(const Integer& num1, const Integer& num2)
+        {
+            return !(num1 == num2);
+        }
+
+        friend bool operator==(long long num1, const Integer& num2)
+        {
+            return num2 == Integer(num1);
+        }
+
+        friend bool operator!=(long long num1, const Integer& num2)
+        {
+            return !(num1 == num2);
+        }
+
+        friend bool operator!=(const Integer& num1, long long num2)
+        {
+            return !(num1 == num2);
+        }
+
+        friend bool operator==(const Integer& num1, long long num2)
+        {
+            return num1 == Integer(num2);
+        }
+
 
         friend bool operator<=(Integer& num1, Integer& num2)
         {
@@ -243,7 +425,7 @@ class Integer
 
         List<int> getList()
         {
-            return List(digitsInteger);
+            return List<int>(digitsInteger);
         }
 };
 

@@ -50,6 +50,11 @@ class List : public Iterable<U>
                 add(another[i]);
         }
 
+        ~List() 
+        {
+            delete[] array;
+        }
+
         void add(const U& item, int index)
         {
             if(length < index || index < 0)
@@ -58,11 +63,19 @@ class List : public Iterable<U>
             if(length == capacity) 
                 resize();
 
-            for(int i = length-1; index < i; i--)
+            for(int i = length-1; index <= i; i--)
                 array[i+1] = array[i];
             
             array[index] = item;
             length++;
+        }
+
+        void replace(const U& item, int index)
+        {
+            if(length <= index || index < 0)
+                throw std::invalid_argument("Index out bound");
+
+            array[index] = item;
         }
 
         // add last*
@@ -73,7 +86,7 @@ class List : public Iterable<U>
 
         U pop(int index)
         {
-            if(length < index || index < 0 || length == 0)
+            if(length <= index || index < 0 || length == 0)
                 throw std::out_of_range("Index out of bounds");
 
             U item = array[index];
@@ -113,6 +126,17 @@ class List : public Iterable<U>
         }
 
         template <typename M>
+        static List<M> concatenate(const List<M> l1, const List<M> l2)
+        {
+            List<M> toR;
+            for(M item: l1)
+                toR.add(item);
+            for(M item: l2)
+                toR.add(item);
+            return toR;
+        }
+
+        template <typename M>
         friend bool operator==(const List<M> l1, const List<M> l2)
         {
             if(l1.size() != l2.size()) return false;
@@ -132,13 +156,18 @@ class List : public Iterable<U>
             return this->array[index];
         }
 
-        void operator=(List<U> another)
+        List<U>& operator=(const List<U>& another)
         {
             delete[] array;
-            length = another.length;
             capacity = another.capacity;
-            array = another.array;
+            length = another.length;
+            array = new U[capacity];
+            for (int i = 0; i < length; i++)
+                array[i] = another.array[i];
+
+            return *this;
         }
+
 
         friend std::ostream& operator<<(std::ostream& os, const List& list)
         {
@@ -153,8 +182,8 @@ class List : public Iterable<U>
             return os;
         }
         
-        Iterator<U> begin() const { return Iterator(array); }
-        Iterator<U> end() const { return Iterator(array + length); }
+        Iterator<U> begin() const { return Iterator<U>(array); }
+        Iterator<U> end() const { return Iterator<U>(array + length); }
 };
 
 #endif
