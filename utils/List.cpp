@@ -15,7 +15,7 @@ class List : public Iterable<U>
 {
     private:
         static const int DEFAULT_INITIAL_SIZE = 10;
-        static constexpr double DEFAULT_RESIZE = 1.7;
+        static constexpr double DEFAULT_RESIZE = 1.4;
 
         U* array;
         int capacity;

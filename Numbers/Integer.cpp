@@ -319,6 +319,11 @@ class Integer
             return quant;
         }
 
+        friend Integer operator%(const Integer& num1, const Integer& num2)
+        {
+            return num1 - (num1/num2)*num2;
+        }
+
         friend std::ostream& operator<<(std::ostream& os, const Integer& number)
         {
             if(number.digitsInteger.size() == 0) return os << '0';
