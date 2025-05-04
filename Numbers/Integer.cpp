@@ -3,8 +3,9 @@
 
 #include "../utils/List.cpp"
 #include <iostream>
+#include "Number.cpp"
 
-class Integer
+class Integer: Number
 {
     private:
         static const int DEFAULT_BASE = 100000;
@@ -38,7 +39,7 @@ class Integer
         }
 
         // O(log_10 (n))
-        static int digits(int x)
+        static int digits(long long x)
         {
             int c = 0;
             while(x != 0)
@@ -67,6 +68,8 @@ class Integer
             Integer toR;
             for(int i = digitsInteger.size() - index -1; i < digitsInteger.size(); i++)
                 toR.addDigit(digitsInteger[i]);
+
+            Integer::cleanDigits(toR);
             return toR;
         }
 
@@ -75,6 +78,7 @@ class Integer
             Integer toR;
             for(int i = 0; i < index; i++)
                 toR.digitsInteger.add(digitsInteger[i]);
+            Integer::cleanDigits(toR);
             return toR;
         }
 
@@ -131,7 +135,7 @@ class Integer
         }
 
     public:
-        Integer(): Integer(0)  {}
+        Integer() :BASE(DEFAULT_BASE), sign(true) {}
         Integer(long long x): BASE(DEFAULT_BASE), sign(true)
         {
             sign = x >= 0;
@@ -262,16 +266,6 @@ class Integer
             return mult;
         }
 
-        friend Integer operator*(const Integer& num1, long long num2)
-        {
-            return Integer(num2)*num1;
-        }
-        
-        friend Integer operator*(long long num1, const Integer& num2)
-        {
-            return num2*num1;
-        }
-
         friend Integer operator/(const Integer& num1, const Integer& num2)
         {
             if (num2 == Integer(0))
@@ -287,19 +281,25 @@ class Integer
             Integer dividend = (scaleFactor == 1 ? num1 : scaleFactor * num1);
             Integer divisor = (scaleFactor == 1 ? num2 : scaleFactor * num2);
 
+            // toda esta parte de U está resvisada y funciona correctamente
             int m = dividend.numberSize() - divisor.numberSize();
-            Integer U = dividend.partHigh(divisor.numberSize());
+            Integer U;
+            U.digitsInteger = List<int>(m+1);
+            for(int i = m; i < dividend.numberSize(); i++)
+            {
+                U.digitsInteger.add(dividend.digitAt(i));
+            }
 
+            //corregido un for que no se usa
             Integer quant;
             quant.BASE = num1.BASE;
             quant.setSize(m+1);
-            for(int i=0; i < m; i++)
-                quant.digitsInteger.add(0);
 
-            for(int j = m-1; 0 <= j; j--)
+            for(int j = m; 0 <= j; --j)
             {
-                long long high = U.digitAt(U.numberSize() - 1);
-                long long low = U.digitAt(U.numberSize() - 2);
+                int help = U.numberSize() - 1;
+                long long high = U.digitAt(help);
+                long long low = U.digitAt(help - 1);
                 long long q = (1LL * high * num2.BASE + low) / divisor.digitAt(divisor.numberSize() - 1);
                 if(q >= num1.BASE) q = num1.BASE - 1;
 
@@ -323,6 +323,25 @@ class Integer
         {
             return num1 - (num1/num2)*num2;
         }
+
+        friend Integer operator^(Integer base, Integer exp)
+        {
+            if (exp < Integer(0))
+                throw std::invalid_argument("Exponent must be non-negative");
+
+            Integer result = 1;
+            while (exp > 0)
+            {
+                if (exp.digitsInteger[0]%2  == 1)
+                    result = result * base;
+
+                base = base * base;
+                exp = exp / 2;
+            }
+
+            return result;
+        }
+
 
         friend std::ostream& operator<<(std::ostream& os, const Integer& number)
         {
@@ -385,6 +404,11 @@ class Integer
             return -num2 < -num1;
         }  
 
+        friend bool operator>(const Integer& num1, const Integer& num2)
+        {
+            return num2 < num1;
+        }
+
         friend bool operator==(const Integer& num1, const Integer& num2)
         {
             return num1.sign == num2.sign &&
@@ -395,26 +419,6 @@ class Integer
         friend bool operator!=(const Integer& num1, const Integer& num2)
         {
             return !(num1 == num2);
-        }
-
-        friend bool operator==(long long num1, const Integer& num2)
-        {
-            return num2 == Integer(num1);
-        }
-
-        friend bool operator!=(long long num1, const Integer& num2)
-        {
-            return !(num1 == num2);
-        }
-
-        friend bool operator!=(const Integer& num1, long long num2)
-        {
-            return !(num1 == num2);
-        }
-
-        friend bool operator==(const Integer& num1, long long num2)
-        {
-            return num1 == Integer(num2);
         }
 
 

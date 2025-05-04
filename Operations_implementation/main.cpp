@@ -1,12 +1,7 @@
 #include <iostream>
 #include "../Numbers/Integer.cpp"
-
-Integer testingFunc()
-{
-    return 12413;
-}
+#include "../Numbers/Number.cpp"
 
 int main() {
-    Integer number = 26, number2 = 16;
-    std::cout << testingFunc() << std::endl;
+    Integer number = 1982741041;
 }
