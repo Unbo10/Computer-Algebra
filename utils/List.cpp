@@ -1,6 +1,7 @@
 #ifndef LIST_H
 #define LIST_H
 #include <iostream>
+#include <initializer_list>
 #include "Iterator.cpp"
 #include "Iterable.cpp"
 /*
@@ -49,6 +50,17 @@ class List : public Iterable<U>
             for(int i = 0; i < another.length; i++)
                 add(another[i]);
         }
+
+        List(std::initializer_list<U> values)
+        {
+            length = values.size();
+            capacity = length > 0 ? length : DEFAULT_INITIAL_SIZE;
+            array = new U[capacity];
+            int i = 0;
+            for (const U& val : values)
+                array[i++] = val;
+        }
+
 
         ~List() 
         {
@@ -136,8 +148,7 @@ class List : public Iterable<U>
             return toR;
         }
 
-        template <typename M>
-        friend bool operator==(const List<M> l1, const List<M> l2)
+        friend bool operator==(const List<U> l1, const List<U> l2)
         {
             if(l1.size() != l2.size()) return false;
 

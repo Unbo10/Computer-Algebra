@@ -1,11 +1,11 @@
 #ifndef INTEGER_H
 #define INTEGER_H
 
-#include "../utils/List.cpp"
 #include <iostream>
+#include "../utils/List.cpp"
 #include "Number.cpp"
 
-class Integer: Number
+class Integer: public Number
 {
     private:
         static const int DEFAULT_BASE = 100000;
@@ -274,6 +274,7 @@ class Integer: Number
                 throw std::invalid_argument("Different bases not supported");
             if (num1.numberSize() < num2.numberSize())
                 return Integer(0);
+            if(num2 == 1) return num1;
             int top = num2.digitAt(num2.numberSize() - 1);
             int scaleFactor  = (top >= num2.BASE/2) 
                         ? 1 
@@ -340,6 +341,67 @@ class Integer: Number
             }
 
             return result;
+        }
+
+        static Integer max(const Integer& n1, const Integer& n2)
+        {
+            if(n1 < n2) return n2;
+            return n1;
+        }
+
+        static Integer min(const Integer& n1, const Integer& n2)
+        {
+            if(n1 < n2) return n1;
+            return n2;
+        }
+
+        static Integer abs(const Integer& r)
+        {
+            if(r.sign) return r;
+            return -r;
+        }
+
+        static List<Integer> extendEuclidean(const Integer& num1, const Integer& num2)
+        {
+            List<Integer> u = {(num1.sign)? num1: -num1, 1, 0};
+            List<Integer> v = {(num2.sign)? num2: -num2, 0, 1};
+
+            while(0 != v[0])
+            {
+                Integer q = u[0]/v[0];
+                List<Integer> r = {u[0] - q*v[0], u[1] - q*v[1], u[2] - q*v[2]};
+                u = v;
+                v = r;
+            }
+            return u;
+        }
+
+        static Integer binaryEcludian(Integer n1, Integer n2)
+        {
+            if(!n1.sign)
+                n1.sign = true;
+            if(!n2.sign)
+                n2.sign = true;
+            if(n1 == 0 || n2 == 0)
+                return max(n1, n2);
+
+            Integer gcd = 1;
+            while(n1.digitAt(0)%2 == 0 && n2.digitAt(0)%2 == 0)
+            {
+                n1 = n1/2;
+                n2 = n2/2;
+                gcd = 2*gcd;
+            }
+
+            while(0 < n1 && n2 != 1)
+            {
+                while(n1.digitAt(0)%2 == 0) n1 = n1/2;
+                while(n2.digitAt(0)%2 == 0) n2 = n2/2;
+                Integer t = Integer::abs(n1 - n2);
+                n2 = Integer::min(n1, n2);
+                n1 = t;
+            }
+            return gcd*n2;
         }
 
 
@@ -420,7 +482,6 @@ class Integer: Number
         {
             return !(num1 == num2);
         }
-
 
         friend bool operator<=(Integer& num1, Integer& num2)
         {
