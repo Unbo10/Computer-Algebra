@@ -235,6 +235,8 @@ class Integer: public Number
 
             if(num1 < num2)
                 return -(num2 - num1);
+            if(!num2.sign)
+                return num1 + (-num2);
 
             bool carry = 0;
             int maxSize = Integer::max(num1.numberSize(), num2.numberSize());
@@ -369,7 +371,8 @@ class Integer: public Number
             while(0 != v[0])
             {
                 Integer q = u[0]/v[0];
-                List<Integer> r = {u[0] - q*v[0], u[1] - q*v[1], u[2] - q*v[2]};
+
+                List<Integer> r = {u[0] - (q*v[0]), u[1] - (q*v[1]), u[2] - (q*v[2])};
                 u = v;
                 v = r;
             }
@@ -418,7 +421,7 @@ class Integer: public Number
                     os << '0';
                 os << number.digitAt(i);
             }  
-            return os << " (based-)" << number.BASE;
+            return os /*<< " (based-)" << number.BASE*/;
         }
 
         // operadora de asignacion
