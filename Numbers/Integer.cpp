@@ -41,7 +41,7 @@ class Integer: public Number
         // O(log_10 (n))
         static int digits(long long x)
         {
-            int c = 0;
+            int c = 1;
             while(x != 0)
             {
                 x /= 10;
@@ -52,7 +52,7 @@ class Integer: public Number
 
         static void cleanDigits(Integer& num)
         {
-            int length = num.numberSize();
+            int length = num.digitsInteger.getCapacity();
             while(0 < length && num.digitAt(length-1) == 0)
                 length--;
             if(length == num.numberSize()) return;
@@ -277,6 +277,15 @@ class Integer: public Number
             if (num1.numberSize() < num2.numberSize())
                 return Integer(0);
             if(num2 == 1) return num1;
+
+            if(num1 < 0 && num2 < 0)
+                return 1+(-num1/(-num2));
+
+            if(!num2.sign)
+                return -(num1/(-num2));
+            if(!num1.sign)
+                return -((-num1)/num2 + 1);
+
             int top = num2.digitAt(num2.numberSize() - 1);
             int scaleFactor  = (top >= num2.BASE/2) 
                         ? 1 
@@ -292,6 +301,7 @@ class Integer: public Number
             {
                 U.digitsInteger.add(dividend.digitAt(i));
             }
+            
 
             //corregido un for que no se usa
             Integer quant;
@@ -304,8 +314,9 @@ class Integer: public Number
                 long long high = U.digitAt(help);
                 long long low = U.digitAt(help - 1);
                 long long q = (1LL * high * num2.BASE + low) / divisor.digitAt(divisor.numberSize() - 1);
+                
                 if(q >= num1.BASE) q = num1.BASE - 1;
-
+                
                 Integer multiplyTest = q*divisor;
                 while(U < multiplyTest)
                 {
@@ -314,7 +325,12 @@ class Integer: public Number
                 }
                 Integer remainer = U - multiplyTest;
                 if(0 < j)
-                    U = Integer::multiplyByBase(remainer, 1) + dividend.digitAt(j - 1);
+                {
+                    int newDig = dividend.digitAt(j - 1);
+                    if(newDig == 0)
+                        U = Integer::multiplyByBase(remainer, 2);
+                    else U = Integer::multiplyByBase(remainer, 1) + newDig;
+                } 
                 
                 quant.digitsInteger.replace(q, j);
             }
@@ -424,23 +440,26 @@ class Integer: public Number
             return os /*<< " (based-)" << number.BASE*/;
         }
 
+        friend std::istream& operator>>(std::istream& is, Integer& num)
+        {
+            long long read;
+            is >> read;
+            num = read;
+            return is;
+        }
+
         // operadora de asignacion
         void operator+=(const Integer& other)
         {
             *this = *this + other;
         }
 
-        Integer& operator=(long long number)
-        {
-            digitsInteger.clear();
-            sign = number >= 0;
-            this->addDigit((sign)? number : -number);
-            return *this;
-        }
-
         Integer& operator=(const Integer& numb)
         {
-            if(this == &numb) return *this;
+            if (this == &numb)
+            {
+                return *this;
+            }
             digitsInteger = numb.digitsInteger;
             sign = numb.sign;
             BASE = numb.BASE;

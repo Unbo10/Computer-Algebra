@@ -124,6 +124,11 @@ class List : public Iterable<U>
             return length;
         }
 
+        int getCapacity() const 
+        {
+            return capacity;
+        }
+
         U* getArray() const
         {
             return array;

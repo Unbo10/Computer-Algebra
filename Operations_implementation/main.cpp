@@ -4,8 +4,7 @@
 #include "../Numbers/Rational.cpp"
 
 int main() {
-    Integer m = 7000, m2 = 4500, k = -1;
-    List<Integer> gcd = Integer::extendEuclidean(m, m2);
+    Integer dividen = 0, divisor = 5, Ex;
 
-    std::cout << gcd[0] << " =? " << m*gcd[1] + m2*gcd[2];
+    std::cout << dividen/divisor;
 }
