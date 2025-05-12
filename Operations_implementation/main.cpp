@@ -4,7 +4,8 @@
 #include "../Numbers/Rational.cpp"
 
 int main() {
-    Integer dividen = 0, divisor = 5, Ex;
-
-    std::cout << dividen/divisor;
+    Integer dividen = 101, divisor = 127412;
+    Integer::changeBase(2, dividen);
+    Integer::changeBase(2, divisor);
+    std::cout << dividen*divisor;
 }
