@@ -145,6 +145,27 @@ class Integer: public Number
         Integer(const Integer& toC) : digitsInteger(toC.digitsInteger), sign(toC.sign), BASE(toC.BASE) {}
         //~Integer() {}
 
+        static void changeBase(int newBase, Integer& number)
+        {
+            if(newBase < 2) throw std::invalid_argument("Base must be grader than 2");
+            Integer divisor;
+            divisor.BASE = number.BASE;
+            divisor.addDigit(newBase);
+            
+            List<int> digit;
+            while(number != 0)
+            {
+                Integer quotient = number/divisor;
+                //añadir el residuo de la división
+                digit.add((number - quotient*divisor).digitAt(0));
+                number = quotient;
+            }
+
+            number.BASE = newBase;
+            number.digitsInteger = digit;
+            Integer::cleanDigits(number);
+        }
+
         void setSize(int newSize)
         {
             List<int> newList(newSize);
@@ -200,18 +221,18 @@ class Integer: public Number
 
         friend Integer operator+(Integer first, Integer second)
         {
+            if (first.BASE != second.BASE) 
+                throw std::invalid_argument("Not defined sum of integers in different Bases yet");
+            
             if (first.sign ^ second.sign) 
             {
                 if(first.sign == true)
                     return first - (-second);
                 return second - (-first);
             }
-                
-
-            if (first.BASE != second.BASE) 
-                throw std::invalid_argument("Not defined sum of integers in different Bases yet");
 
             Integer sumOfIntegers;
+            sumOfIntegers.BASE = first.BASE;
             int length = max(first.numberSize(), second.numberSize());
             int c = 0;
             long long res = 0;
@@ -219,7 +240,7 @@ class Integer: public Number
             while (c < length || res != 0)
             {
                 res += first.digitAt(c) + second.digitAt(c);
-                sumOfIntegers.addDigit(res % first.BASE);
+                sumOfIntegers.forceAdd(res % first.BASE);
                 res /= first.BASE;
                 c++;
             }
@@ -261,11 +282,22 @@ class Integer: public Number
 
         friend Integer operator*(const Integer& num1, const Integer& num2)
         {
+            if(num1.BASE != num2.BASE) throw std::invalid_argument("Error");
             if(num1 == 0 || num2 == 0) return Integer();
             Integer mult = Integer::karatsuba(num1, num2);
             mult.sign = !(num1.sign ^ num2.sign);
+            mult.BASE= num1.BASE;
             Integer::cleanDigits(mult);
             return mult;
+        }
+
+        friend Integer operator*(long long num1, const Integer& num2)
+        {
+            Integer help;
+            help.BASE = num2.BASE;
+            help.forceAdd(num1);
+            std::cout << help.getBase() << "  " << help << std::endl;
+            return help*num2;
         }
 
         friend Integer operator/(const Integer& num1, const Integer& num2)
@@ -287,7 +319,9 @@ class Integer: public Number
                 return -((-num1)/num2 + 1);
 
             int top = num2.digitAt(num2.numberSize() - 1);
-            int scaleFactor  = (top >= num2.BASE/2) 
+            Integer scaleFactor;
+            scaleFactor.BASE = num1.BASE;
+            scaleFactor  = (top >= num2.BASE/2) 
                         ? 1 
                         : num2.BASE/(top + 1);
             Integer dividend = (scaleFactor == 1 ? num1 : scaleFactor * num1);
@@ -296,6 +330,7 @@ class Integer: public Number
             // toda esta parte de U está resvisada y funciona correctamente
             int m = dividend.numberSize() - divisor.numberSize();
             Integer U;
+            U.BASE = num1.BASE;
             U.digitsInteger = List<int>(m+1);
             for(int i = m; i < dividend.numberSize(); i++)
             {
@@ -431,7 +466,12 @@ class Integer: public Number
             if(!number.sign) os << "-";
             
             os << number.digitAt(number.digitsInteger.size() - 1);
-            for(int i = number.digitsInteger.size() - 2; i >= 0; i--)
+            if(number.BASE != Integer::DEFAULT_BASE)
+            {
+                for(int i = number.digitsInteger.size() - 2; i >= 0; i--)
+                    os << number.digitAt(i);
+            }
+            else for(int i = number.digitsInteger.size() - 2; i >= 0; i--)
             {
                 for(int j = 0; j < Integer::digitsByBlock- digits(number.digitAt(i)); j++)
                     os << '0';
