@@ -9,3 +9,6 @@ output
 
 #*Ignore Java files
 *.java/
+
+#*Igonore executables
+*.exe/
