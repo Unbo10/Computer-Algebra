@@ -10,5 +10,5 @@ output
 #*Ignore Java files
 *.java/
 
-#Igonore executables
+#*Igonore executables
 *.exe/

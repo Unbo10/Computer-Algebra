@@ -4,7 +4,12 @@
 #include "../Numbers/Rational.cpp"
 
 int main() {
-    Integer dividen = 0, divisor = 5, Ex;
+    Integer dividend, divisor;
+    dividend = 1000;
+    divisor = 950;
 
-    std::cout << dividen/divisor;
+    Integer result;
+    std::cout << dividend << "\n";
+    result = dividend * divisor;
+    std::cout << "Result: " << result;
 }
